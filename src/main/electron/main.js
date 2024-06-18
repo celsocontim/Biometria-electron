@@ -1,15 +1,11 @@
 const {app, BrowserWindow, Notification} = require('electron');
 const path = require('path');
-//const { autoUpdater } = require("electron-updater");
+const { autoUpdater } = require("electron-updater");
 
 let win;
 let serverProcess;
 
 app.allowRendererProcessReuse = true;
-
-global.callElectronUiApi = function () {
-   console.log(app.getVersion())
-}
 
 function createWindow() {
 
@@ -100,7 +96,11 @@ function createWindow() {
     startUp();
 }
 
-app.on('ready', createWindow);
+app.on('ready', function() {
+   createWindow();
+   console.log(app.getVersion())
+   autoUpdater.checkForUpdatesAndNotify();
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

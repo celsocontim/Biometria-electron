@@ -3,13 +3,22 @@
   "version": "0.1.0",
   "main": "main.js",
   "description": "blablabla",
-  "author": "celso.comtin@kdmadosamdas.com",
+  "author": "celsoContimUnimed",
   "scripts": {
     "postinstall": "install-app-deps",
     "start": "npm install && electron ./app",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "publish": "electron-builder -p always"
+    "publish": "node publish.js"
+  },
+  "devDependencies": {
+    "electron": "^31.0.1",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "minimal-request-promise": "^1.5.0",
+    "tree-kill": "^1.2.2",
+    "electron-updater": "^6.2.1"
   },
   "build": {
     "extraResources": [
@@ -29,27 +38,17 @@
       "publish": [
         {
           "provider": "github",
-          "owner": "EdnilsonMonteiro",
-          "repo": "nextron-java",
+          "owner": "celsocontim",
+          "repo": "Biometria-electron",
           "releaseType": "release"
         }
       ]
-    }
-  },
-  "devDependencies": {
-    "electron": "^1.8.8",
-    "electron-builder": "^24.13.3"
-  },
-  "dependencies": {
-    "cross-spawn": "^7.0.3",
-    "electron-updater": "^6.2.1",
-    "minimal-request-promise": "^1.5.0",
-    "tree-kill": "^1.2.2"
-  },
-  "publish": [
-    {
-      "provider": "generic",
-      "url": "https://github.com/EdnilsonMonteiro/nextron-java/releases/latest"
-    }
-  ]
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/celsocontim/Biometria-electron/releases/latest"
+      }
+    ]
+  }
 }
