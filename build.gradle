@@ -1,0 +1,25 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'javax.servlet:javax.servlet-api:3.0.1'
+    implementation 'com.vaadin:vaadin-server:8.1.6'
+    implementation 'com.vaadin:vaadin-push:8.1.6'
+    implementation 'com.vaadin:vaadin-client-compiled:8.1.6'
+    implementation 'com.vaadin:vaadin-themes:8.1.6'
+
+    implementation 'org.eclipse.jetty:jetty-server:9.3.20.v20170531'
+    implementation 'org.eclipse.jetty:jetty-webapp:9.3.20.v20170531'
+    implementation 'org.eclipse.jetty:jetty-continuation:9.3.20.v20170531'
+    implementation 'org.eclipse.jetty.websocket:websocket-server:9.3.20.v20170531'
+
+   // implementation files('C:\\RepositorioBDD\\java-electron-tutorial\\src\\main\\java\\demo\\GBSFingerprint.jar')
+}
+
+applicationName = 'demo'
+mainClassName = 'demo.Launcher'
