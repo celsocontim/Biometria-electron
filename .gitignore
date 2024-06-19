@@ -2,3 +2,4 @@
 /build/
 /src/main/electron/node_modules/
 /src/main/electron/.env
+/src/main/electron/dist/
