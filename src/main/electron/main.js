@@ -1,11 +1,45 @@
 const {app, BrowserWindow, Notification} = require('electron');
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
+const fs = require ('fs');
 
 let win;
 let serverProcess;
 
 app.allowRendererProcessReuse = true;
+
+global.callElectronUiApi = function () {
+   if (arguments){
+      switch (arguments[0]) {
+         //cada chamada será um case dentro do switch
+         case 'maximize':
+            if (!mainWindow.isMaximized()) {
+               mainWindow.maximize();
+            } else {
+               mainWindow.unmaximize();
+            }
+            break;
+      }
+   }
+}
+
+const logDirectory = path.join(app.getPath("userData"), "logs");
+if (!fs.existsSync(logDirectory)) {
+  fs.mkdirSync(logDirectory);
+}
+
+const logFilePath = path.join(logDirectory, "notifications.log");
+
+function logNotification(message) {
+  const logMessage = `${new Date().toISOString()} - ${message}\n`;
+  fs.appendFileSync(logFilePath, logMessage, "utf8");
+}
+
+function showNotification(title, body) {
+  const notificationMessage = `${title}: ${body}`;
+  new Notification({ title: title, body: body }).show();
+  logNotification(notificationMessage);
+}
 
 function createWindow() {
 
@@ -13,15 +47,13 @@ function createWindow() {
     console.log(platform)
 
     if (platform === 'win32') {
-
-        const NOTIFICATION_TITLE = 'Basic Notification'
+       /* const NOTIFICATION_TITLE = 'Notificação Teste'
         const NOTIFICATION_BODY = process.env.path
         new Notification({
           title: NOTIFICATION_TITLE,
           body: NOTIFICATION_BODY
         }).show();
-
-        //if (app.isPackaged) {
+      */
            serverProcess = require('child_process')
                     .spawn('cmd.exe', ['/c', 'demo.bat']
                            ,{
@@ -50,7 +82,7 @@ function createWindow() {
 
     const openWindow = function () {
         mainWindow = new BrowserWindow({
-            title: 'Demo',
+            title: 'Demo-app-biometria',
             width: 640,
             height: 480
         });
@@ -69,9 +101,7 @@ function createWindow() {
                 const kill = require('tree-kill');
                 kill(serverProcess.pid, 'SIGTERM', function () {
                     console.log('Server process killed');
-
                     serverProcess = null;
-
                     mainWindow.close();
                 });
             }
@@ -86,10 +116,9 @@ function createWindow() {
             openWindow();
         }, function (response) {
             console.log('Waiting for the server start...');
-
             setTimeout(function () {
                 startUp();
-            }, 200);
+            }, 1000);
         });
     };
 
@@ -99,7 +128,56 @@ function createWindow() {
 app.on('ready', function() {
    createWindow();
    console.log(app.getVersion())
+
+/*   autoUpdater.setFeedURL({
+     provider: "github",
+     owner: "celsocontim",
+     repo: "Biometria-electron",
+   });
+*/
    autoUpdater.checkForUpdatesAndNotify();
+
+   autoUpdater.on("checking-for-update", () => {
+       const message = "Checking for update...";
+       console.log(message);
+       showNotification("Checking for Update", message);
+   });
+   autoUpdater.on("update-available", (info) => {
+       const message = "Update available.";
+       console.log(message, info);
+       showNotification("Update Available", message);
+     });
+   autoUpdater.on("update-not-available", (info) => {
+       const message = "Update not available, current version: " + app.getVersion();
+       console.log(message, info);
+       showNotification("Update Not Available", message);
+   });
+     autoUpdater.on("error", (err) => {
+       const message = `Error in auto-updater: ${err}`;
+       console.log(message);
+       showNotification("Error", message);
+   });
+   autoUpdater.on("download-progress", (progressObj) => {
+         let log_message = "Download speed: " + progressObj.bytesPerSecond;
+         log_message = log_message + " - Downloaded " + progressObj.percent + "%";
+         log_message =
+           log_message +
+           " (" +
+           progressObj.transferred +
+           "/" +
+           progressObj.total +
+           ")";
+         console.log(log_message);
+         showNotification("Download Progress", log_message);
+     });
+     autoUpdater.on("update-downloaded", (info) => {
+         const message = "Update downloaded; will install in 5 seconds";
+         console.log(message, info);
+         showNotification("Update Downloaded", message);
+         setTimeout(function () {
+           autoUpdater.quitAndInstall();
+         }, 5000);
+     });
 });
 
 app.on('window-all-closed', () => {
