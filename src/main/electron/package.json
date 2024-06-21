@@ -1,6 +1,6 @@
 {
   "name": "demo-app",
-  "version": "0.1.4",
+  "version": "0.1.8",
   "main": "main.js",
   "description": "blablabla",
   "author": "celsoContimUnimed",
@@ -16,9 +16,11 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
+    "chokidar": "^3.6.0",
+    "electron-updater": "^6.2.1",
     "minimal-request-promise": "^1.5.0",
     "tree-kill": "^1.2.2",
-    "electron-updater": "^6.2.1"
+    "yaml": "^2.4.5"
   },
   "build": {
     "extraResources": [
@@ -43,12 +45,6 @@
           "releaseType": "release"
         }
       ]
-    },
-    "publish": [
-      {
-        "provider": "generic",
-        "url": "https://github.com/celsocontim/Biometria-electron/releases/latest"
-      }
-    ]
+    }
   }
 }

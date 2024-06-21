@@ -1,7 +1,8 @@
-const {app, BrowserWindow, Notification} = require('electron');
+const {app, BrowserWindow, Notification, Tray} = require('electron');
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
 const fs = require ('fs');
+const builder = require('builder-util-runtime')
 
 let win;
 let serverProcess;
@@ -88,6 +89,13 @@ function createWindow() {
         });
 
         mainWindow.loadURL(appUrl);
+        tray = new Tray('icon.png');
+        tray.setToolTip('Biometria UnimedBH')
+        //mainWindow.minimize();
+        tray.on('double-click', () => {
+            mainWindow.isVisible()?mainWindow.hide():mainWindow.show();
+        })
+        mainWindow.hide();
 
         mainWindow.on('closed', function () {
             mainWindow = null;
@@ -178,6 +186,11 @@ app.on('ready', function() {
            autoUpdater.quitAndInstall();
          }, 5000);
      });
+});
+
+app.setLoginItemSettings({
+    openAtLogin: true,
+    path: app.getPath("exe")
 });
 
 app.on('window-all-closed', () => {
