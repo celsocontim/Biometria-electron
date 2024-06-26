@@ -1,4 +1,4 @@
-const {app, BrowserWindow, Notification, Tray} = require('electron');
+const {app, BrowserWindow, Notification, Tray, Menu} = require('electron');
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
 const fs = require ('fs');
@@ -89,19 +89,29 @@ function createWindow() {
         });
 
         mainWindow.loadURL(appUrl);
-        tray = new Tray('icon.png');
-        tray.setToolTip('Biometria UnimedBH')
-        //mainWindow.minimize();
-        tray.on('double-click', () => {
-            mainWindow.isVisible()?mainWindow.hide():mainWindow.show();
-        })
-        mainWindow.hide();
 
         mainWindow.on('closed', function () {
             mainWindow = null;
         });
 
+        mainWindow.on('minimize',function(event){
+            event.preventDefault();
+            mainWindow.hide();
+        });
+
         mainWindow.on('close', function (e) {
+
+            if (serverProcess) {
+               e.preventDefault();
+               encerraJava(serverProcess);
+               serverProcess = null;
+               console.log('Server process killed');
+               if (mainWindow !== null) {
+                  mainWindow.close();
+               }
+            }
+
+            /*
             if (serverProcess) {
                 e.preventDefault();
 
@@ -113,7 +123,36 @@ function createWindow() {
                     mainWindow.close();
                 });
             }
+            */
         });
+
+        let trayIcon = null
+        if(!app.isPackaged) {
+                  trayIcon = 'demo/icon.ico'; // when in dev mode
+        } else {
+                  trayIcon = './demo/icon.ico';
+        }
+        tray = new Tray(trayIcon);
+        tray.setToolTip('Biometria UnimedBH')
+                //mainWindow.minimize();
+        tray.setContextMenu(Menu.buildFromTemplate([
+          {
+            label: 'Abrir', click: function () {
+              mainWindow.show();
+            }
+          },
+          {
+            label: 'Sair', click: function () {
+              isQuiting = true;
+              mainWindow.close();
+              app.quit();
+            }
+          }
+        ]));
+        tray.on('double-click', () => {
+                    mainWindow.isVisible()?mainWindow.hide():mainWindow.show();
+        })
+        mainWindow.hide();
     };
 
     const startUp = function () {
@@ -133,16 +172,18 @@ function createWindow() {
     startUp();
 }
 
+function encerraJava (serverProcess) {
+   // kill Java executable
+   const kill = require('tree-kill');
+   kill(serverProcess.pid, 'SIGTERM', function () {
+      console.log('Server process killed');
+   });
+}
+
 app.on('ready', function() {
    createWindow();
    console.log(app.getVersion())
 
-/*   autoUpdater.setFeedURL({
-     provider: "github",
-     owner: "celsocontim",
-     repo: "Biometria-electron",
-   });
-*/
    autoUpdater.checkForUpdatesAndNotify();
 
    autoUpdater.on("checking-for-update", () => {
@@ -188,10 +229,6 @@ app.on('ready', function() {
      });
 });
 
-app.setLoginItemSettings({
-    openAtLogin: true,
-    path: app.getPath("exe")
-});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -203,4 +240,11 @@ app.on('activate', () => {
     if (win === null) {
         createWindow()
     }
+    /*if (!app.isPackaged){
+       app.setLoginItemSettings({
+                openAtLogin: true,
+                path: app.getPath("exe")
+       })
+    }
+    */
 });

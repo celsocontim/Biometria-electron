@@ -1,6 +1,6 @@
 {
   "name": "demo-app",
-  "version": "0.1.8",
+  "version": "0.1.11",
   "main": "main.js",
   "description": "blablabla",
   "author": "celsoContimUnimed",
@@ -33,10 +33,12 @@
     "productName": "demo-app-teste",
     "copyright": "Copyright © 2024 Jovem Fla",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "resources"
     },
     "win": {
       "target": "nsis",
+      "icon": "demo/icon.ico",
       "publish": [
         {
           "provider": "github",
@@ -45,6 +47,11 @@
           "releaseType": "release"
         }
       ]
+    },
+    "nsis": {
+      "installerIcon": "demo/icon.ico",
+      "installerHeaderIcon": "demo/icon.ico",
+      "deleteAppDataOnUninstall": true
     }
   }
 }
