@@ -1,28 +1,25 @@
-const {app, BrowserWindow, Notification, Tray, Menu} = require('electron');
+const {app, BrowserWindow, Notification, Tray, Menu, ipcMain, globalShortcut} = require('electron');
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
 const fs = require ('fs');
-const builder = require('builder-util-runtime')
+const sound = require("sound-play");
 
 let win;
 let serverProcess;
 
 app.allowRendererProcessReuse = true;
 
-global.callElectronUiApi = function () {
-   if (arguments){
+/*
+global.callElectronUiApi = function (args) {
+   if (arguments) {
       switch (arguments[0]) {
-         //cada chamada será um case dentro do switch
-         case 'maximize':
-            if (!mainWindow.isMaximized()) {
-               mainWindow.maximize();
-            } else {
-               mainWindow.unmaximize();
-            }
+         case 'getVersion':
+            return app.getVersion();
             break;
       }
    }
 }
+*/
 
 const logDirectory = path.join(app.getPath("userData"), "logs");
 if (!fs.existsSync(logDirectory)) {
@@ -58,12 +55,12 @@ function createWindow() {
            serverProcess = require('child_process')
                     .spawn('cmd.exe', ['/c', 'demo.bat']
                            ,{
-                               cwd: './demo/bin'
+                               cwd: './resources/bin'
                            },{ shell: true })
                        .on('error', function( err ){ throw err });
     } else {
         serverProcess = require('child_process')
-            .spawn(app.getAppPath() + '\\demo\\bin\\demo',
+            .spawn(app.getAppPath() + '\\resources\\bin\\demo',
             { shell: true });
     }
 
@@ -128,9 +125,9 @@ function createWindow() {
 
         let trayIcon = null
         if(!app.isPackaged) {
-                  trayIcon = 'demo/icon.ico'; // when in dev mode
+                  trayIcon = 'resources/icon.ico'; // when in dev mode
         } else {
-                  trayIcon = './demo/icon.ico';
+                  trayIcon = './resources/icon.ico';
         }
         tray = new Tray(trayIcon);
         tray.setToolTip('Biometria UnimedBH')
@@ -181,8 +178,21 @@ function encerraJava (serverProcess) {
 }
 
 app.on('ready', function() {
+   ipcMain.handle('get-version', async () => {
+      return app.getVersion();
+   })
    createWindow();
-   console.log(app.getVersion())
+   console.log(app.getVersion());
+   globalShortcut.register('Alt+H',() => {
+      if(!app.isPackaged) {
+            console.log("HADOOOUKEN não empacotado")
+            sound.play(__dirname + "/resources/Hadouken.mp3"); // when in dev mode
+      } else {
+            console.log("HADOOOUKEN empacotado")
+            const soundPath = path.join(__dirname, "../../resources/Hadouken.mp3");
+            sound.play(soundPath);
+      }
+   });
 
    autoUpdater.checkForUpdatesAndNotify();
 
@@ -232,7 +242,8 @@ app.on('ready', function() {
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
-        app.quit()
+        globalShortcut.unregisterAll();
+        app.quit();
     }
 });
 

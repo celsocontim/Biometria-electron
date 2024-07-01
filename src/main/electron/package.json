@@ -1,6 +1,6 @@
 {
   "name": "demo-app",
-  "version": "0.1.11",
+  "version": "0.1.14",
   "main": "main.js",
   "description": "blablabla",
   "author": "celsoContimUnimed",
@@ -19,14 +19,15 @@
     "chokidar": "^3.6.0",
     "electron-updater": "^6.2.1",
     "minimal-request-promise": "^1.5.0",
+    "sound-play": "^1.1.0",
     "tree-kill": "^1.2.2",
     "yaml": "^2.4.5"
   },
   "build": {
     "extraResources": [
       {
-        "from": "demo",
-        "to": "../demo"
+        "from": "resources",
+        "to": "../resources"
       }
     ],
     "appId": "demo-app",
@@ -38,7 +39,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "demo/icon.ico",
+      "icon": "resources/icon.ico",
       "publish": [
         {
           "provider": "github",
@@ -49,8 +50,8 @@
       ]
     },
     "nsis": {
-      "installerIcon": "demo/icon.ico",
-      "installerHeaderIcon": "demo/icon.ico",
+      "installerIcon": "resources/icon.ico",
+      "installerHeaderIcon": "resources/icon.ico",
       "deleteAppDataOnUninstall": true
     }
   }

@@ -4,3 +4,6 @@
 /src/main/electron/.env
 /src/main/electron/dist/
 /.gradle/
+/src/main/java/resources/commons-io-2.4.jar
+/src/main/java/resources/GBSFingerprint-7.0.45.jar
+/src/main/java/resources/jna-4.1.0.jar
