@@ -1,0 +1,17 @@
+{
+  "name": "nodeserver",
+  "version": "1.0.0",
+  "description": "Servidor local node rodando aplicação Java",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Celso Contim",
+  "license": "ISC",
+  "dependencies": {
+    "http": "^0.0.1-security",
+    "net": "^1.0.2",
+    "socket.io": "^4.7.5",
+    "tree-kill": "^1.2.2"
+  }
+}

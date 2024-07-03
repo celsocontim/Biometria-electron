@@ -25,4 +25,5 @@ dependencies {
 }
 
 applicationName = 'demo'
-mainClassName = 'demo.Launcher'
+mainClassName = 'teste_biometria/GriauleTeste'
+//mainClassName = 'demo.Launcher'
