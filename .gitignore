@@ -11,3 +11,7 @@
 /src/main/nodeServer/resources/lib/commons-io-2.4.jar
 /src/main/nodeServer/resources/lib/GBSFingerprint-7.0.45.jar
 /src/main/nodeServer/resources/lib/jna-4.1.0.jar
+/src/main/electron/resources/lib/jna-4.1.0.jar
+/src/main/electron/resources/lib/GBSFingerprint-7.0.45.jar
+/src/main/electron/resources/lib/commons-io-2.4.jar
+/src/main/electron/resources/resourcesAntigos/

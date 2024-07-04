@@ -1,4 +1,4 @@
-const {app, utilityProcess, BrowserWindow, Notification, Tray, Menu, ipcMain, globalShortcut} = require('electron');
+const {app, BrowserWindow, Notification, Tray, Menu, ipcMain, globalShortcut} = require('electron');
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
 const fs = require ('fs');
@@ -6,9 +6,20 @@ const sound = require("sound-play");
 
 let win;
 let serverProcess;
-var cadastroSucesso = 0;
 
 app.allowRendererProcessReuse = true;
+
+/*
+global.callElectronUiApi = function (args) {
+   if (arguments) {
+      switch (arguments[0]) {
+         case 'getVersion':
+            return app.getVersion();
+            break;
+      }
+   }
+}
+*/
 
 const logDirectory = path.join(app.getPath("userData"), "logs");
 if (!fs.existsSync(logDirectory)) {
@@ -31,19 +42,41 @@ function showNotification(title, body) {
 function createWindow() {
 
     let platform = process.platform;
-    console.log(cadastroSucesso);
+    console.log(platform)
 
-    const HTTPServer = utilityProcess.fork(path.join(__dirname, 'index.js'));
-    HTTPServer.on('spawn', function (){
-         console.log("Servidor HTTP iniciado! Process ID: ", HTTPServer.pid);
+    if (platform === 'win32') {
+       /* const NOTIFICATION_TITLE = 'Notificação Teste'
+        const NOTIFICATION_BODY = process.env.path
+        new Notification({
+          title: NOTIFICATION_TITLE,
+          body: NOTIFICATION_BODY
+        }).show();
+      */
+           serverProcess = require('child_process')
+                    .spawn('cmd.exe', ['/c', 'demo.bat']
+                           ,{
+                               cwd: './resources/bin'
+                           },{ shell: true })
+                       .on('error', function( err ){ throw err });
+    } else {
+        serverProcess = require('child_process')
+            .spawn(app.getAppPath() + '\\resources\\bin\\demo',
+            { shell: true });
+    }
+
+    if (!serverProcess) {
+        console.error('Unable to start server from ' + app.getAppPath());
+        app.quit();
+        return;
+    }
+
+    serverProcess.stdout.on('data', function (data) {
+        console.log('Server: ' + data);
     });
 
-    const TCPServer = utilityProcess.fork(path.join(__dirname, 'socket.js'));
-    TCPServer.on('spawn', function (){
-         console.log("Servidor TCP iniciado! Process ID: ", TCPServer.pid);
-    });
+    console.log("Server PID: " + serverProcess.pid);
 
-    let appUrl = 'http://localhost:8080/';
+    let appUrl = 'http://localhost:8080';
 
     const openWindow = function () {
         mainWindow = new BrowserWindow({
@@ -52,7 +85,7 @@ function createWindow() {
             height: 480
         });
 
-        mainWindow.loadURL(appUrl + "/cadastro.html");
+        mainWindow.loadURL(appUrl);
 
         mainWindow.on('closed', function () {
             mainWindow = null;
@@ -64,31 +97,31 @@ function createWindow() {
         });
 
         mainWindow.on('close', function (e) {
-           TCPServer.kill();
-           HTTPServer.kill();
-        });
 
-        TCPServer.on('message', (data) => {
-              var string = (data.toString());
-              console.log("Mensagem do TCP server chegou no eletron");
-              if (string.includes("score")) {
-                  string = string.replace(/\s+/g, ''); //remove espaços em branco
-                  console.log(string);
-                  tocaBeep();
-                  if (Number(string.substring(string.length - 2)) > 40){
-                     mainWindow.loadURL(appUrl + "/biometriaEncontrada.html");
-                  } else {
-                     mainWindow.loadURL(appUrl + "/biometriaErro.html");
-                  }
-              }
-              else if (string.includes("Finger detected on device") && cadastroSucesso == 0) {
-                  console.log(string);
-                  tocaBeep();
-                  mainWindow.loadURL(appUrl + "/cadastroSucesso.html");
-                  cadastroSucesso = 1;
-              };
-        });
+            if (serverProcess) {
+               e.preventDefault();
+               encerraJava(serverProcess);
+               serverProcess = null;
+               console.log('Server process killed');
+               if (mainWindow !== null) {
+                  mainWindow.close();
+               }
+            }
 
+            /*
+            if (serverProcess) {
+                e.preventDefault();
+
+                // kill Java executable
+                const kill = require('tree-kill');
+                kill(serverProcess.pid, 'SIGTERM', function () {
+                    console.log('Server process killed');
+                    serverProcess = null;
+                    mainWindow.close();
+                });
+            }
+            */
+        });
 
         let trayIcon = null
         if(!app.isPackaged) {
@@ -136,14 +169,13 @@ function createWindow() {
     startUp();
 }
 
-function tocaBeep() {
-      if(!app.isPackaged) {
-          sound.play(__dirname + "/resources/beep.mp3"); // when in dev mode
-      } else {
-          const soundPath = path.join(__dirname, "../../resources/beep.mp3");
-          sound.play(soundPath);
-      }
-};
+function encerraJava (serverProcess) {
+   // kill Java executable
+   const kill = require('tree-kill');
+   kill(serverProcess.pid, 'SIGTERM', function () {
+      console.log('Server process killed');
+   });
+}
 
 app.on('ready', function() {
    ipcMain.handle('get-version', async () => {
@@ -203,7 +235,7 @@ app.on('ready', function() {
          showNotification("Update Downloaded", message);
          setTimeout(function () {
            autoUpdater.quitAndInstall();
-         }, 5000);
+         }, 1000);
      });
 });
 
@@ -219,4 +251,11 @@ app.on('activate', () => {
     if (win === null) {
         createWindow()
     }
+    /*if (!app.isPackaged){
+       app.setLoginItemSettings({
+                openAtLogin: true,
+                path: app.getPath("exe")
+       })
+    }
+    */
 });

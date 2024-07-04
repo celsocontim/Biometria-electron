@@ -2,6 +2,7 @@ const http = require ('http');
 const fs = require('fs');
 const path = require('path');
 const kill = require('tree-kill');
+const { parentPort } = require('electron');
 
 const port = 8080;
 const hostname = '127.0.0.1';
@@ -16,16 +17,6 @@ const server = http.createServer(function (request, response) {
         else if (filePath == '/kill'){
             console.log("Stopping Server...");
             server.close();
-        }
-        else if (filePath == '/biometria'){
-            console.log("Biometria detectada...");
-            const headers = {
-                'Content-Type': 'text/event-stream',
-                'Connection': 'keep-alive',
-                'Cache-Control': 'no-cache'
-            };
-            response.writeHead(200, headers);
-            response.write("data: Biometria detectada")
         }
         else {
             filePath = 'resources/public' + request.url;
@@ -76,7 +67,7 @@ const server = http.createServer(function (request, response) {
                response.setHeader('Content-Encoding', 'none');
                response.setHeader('Connection', 'keep-alive');
                response.setHeader('Access-Control-Allow-Origin', '*');
-               response.flushHeaders();
+               response.end(content, 'utf-8');
            }
            else if (filePath !== '/biometria'){
                 response.writeHead(200, { 'Content-Type': contentType });

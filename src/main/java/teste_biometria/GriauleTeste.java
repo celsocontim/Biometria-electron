@@ -115,6 +115,8 @@ public class GriauleTeste {
 				for (Template reference : this.templates) {
 					try {
 						System.out.println("Verification against template " + (i++) + " with score " + sdk.verify(tpt, reference).getScore());
+						String retorno = echo("Verification against template " + (i++) + " with score " + sdk.verify(tpt, reference).getScore());
+						System.out.println("Java Recebendo: " + retorno);
 					} catch (Exception ex) {
 					}
 				}
