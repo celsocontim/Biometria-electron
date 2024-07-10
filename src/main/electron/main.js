@@ -35,12 +35,16 @@ function createWindow() {
 
     const HTTPServer = utilityProcess.fork(path.join(__dirname, 'index.js'));
     HTTPServer.on('spawn', function (){
-         console.log("Servidor HTTP iniciado! Process ID: ", HTTPServer.pid);
+      console.log("Servidor HTTP iniciado! Process ID: ", HTTPServer.pid);
     });
+
+    HTTPServer.on('message', (data) => {
+      console.log('Mensagem recebida do processo filho: ', data);
+    })
 
     const TCPServer = utilityProcess.fork(path.join(__dirname, 'socket.js'));
     TCPServer.on('spawn', function (){
-         console.log("Servidor TCP iniciado! Process ID: ", TCPServer.pid);
+      console.log("Servidor TCP iniciado! Process ID: ", TCPServer.pid);
     });
 
     let appUrl = 'http://localhost:8080/';

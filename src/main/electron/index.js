@@ -1,27 +1,54 @@
-const http = require ('http');
+const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const kill = require('tree-kill');
+const net = require('net');
 const { parentPort } = require('electron');
 
 const port = 8080;
 const hostname = '127.0.0.1';
+const javaSocketPort = 12345; // Porta que o Java estará ouvindo
+const javaSocketHost = '127.0.0.1'; // Endereço do Java
 
-const server = http.createServer(function (request, response) {
-        console.log('request ', request.url);
-        let filePath = request.url;
+const server = http.createServer((request, response) => {
+    console.log('request ', request.url);
 
-        if (filePath == '/') {
-            filePath = 'resources/public/index.html';
-        }
-        else if (filePath == '/kill'){
-            console.log("Stopping Server...");
-            server.close();
-        }
-        else {
-            filePath = 'resources/public' + request.url;
-        }
+    if (request.method === 'POST' && request.url === '/biometria') {
+        let body = '';
 
+        request.on('data', chunk => {
+            body += chunk.toString();
+        });
+
+        request.on('end', () => {
+            console.log(body)
+            if (body === 'startCapture') {
+                process.parentPort.postMessage(body);
+
+                // Envia a mensagem recebida para o Java via socket
+                //const client = new net.Socket();
+                //client.connect(javaSocketPort, javaSocketHost, () => {
+                //    client.write('startCapture');
+                //    client.end();
+                //});
+                
+
+                response.writeHead(200, { 'Content-Type': 'application/json' });
+                response.end(JSON.stringify({ message: 'Comando startCapture enviado para o Java' }));
+            } else if(body === 'stopCapture') {
+                process.parentPort.postMessage(body);
+                response.writeHead(200, { 'Content-Type': 'application/json' });
+                response.end(JSON.stringify({ message: 'Comando stopCapture enviado para o Java' }));
+            } else if(body === 'sendRecoverData') {
+                process.parentPort.postMessage(body);
+                response.writeHead(200, { 'Content-Type': 'application/json' });
+                response.end(JSON.stringify({ message: 'Comando stopCapture enviado para o Java' }));
+            } else {
+                response.writeHead(400, { 'Content-Type': 'application/json' });
+                response.end(JSON.stringify({ message: 'Comando inválido' }));
+            }
+        });
+    } else {
+        let filePath = request.url === '/' ? 'resources/public/index.html' : 'resources/public' + request.url;
         let extname = String(path.extname(filePath)).toLowerCase();
         let mimeTypes = {
             '.html': 'text/html',
@@ -39,45 +66,45 @@ const server = http.createServer(function (request, response) {
             '.eot': 'application/vnd.ms-fontobject',
             '.otf': 'application/font-otf',
             '.wasm': 'application/wasm',
-            '.ico' : 'image/x-icon'
+            '.ico': 'image/x-icon'
         };
 
         let contentType = mimeTypes[extname] || 'application/octet-stream';
 
         fs.readFile(filePath, function(error, content) {
-           /*
-           if (error) {
-                if(error.code == 'ENOENT') {
-                    fs.readFile('public/404.html', function(error, content) {
-                        response.writeHead(404, { 'Content-Type': 'text/html' });
-                        response.end(content, 'utf-8');
-                    });
-                }
-                else {
-                    response.writeHead(500);
-                    response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
-                }
-            }
-
-            else {
-           */
-           if (filePath == '/documentation') {
-               response.setHeader('Content-Type', 'text/event-stream');
-               response.setHeader('Cache-Control', 'no-cache');
-               response.setHeader('Content-Encoding', 'none');
-               response.setHeader('Connection', 'keep-alive');
-               response.setHeader('Access-Control-Allow-Origin', '*');
-               response.end(content, 'utf-8');
-           }
-           else if (filePath !== '/biometria'){
-                response.writeHead(200, { 'Content-Type': contentType });
+            /*
+            if (error) {
+                 if(error.code == 'ENOENT') {
+                     fs.readFile('public/404.html', function(error, content) {
+                         response.writeHead(404, { 'Content-Type': 'text/html' });
+                         response.end(content, 'utf-8');
+                     });
+                 }
+                 else {
+                     response.writeHead(500);
+                     response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
+                 }
+             }
+ 
+             else {
+            */
+            if (filePath == '/documentation') {
+                response.setHeader('Content-Type', 'text/event-stream');
+                response.setHeader('Cache-Control', 'no-cache');
+                response.setHeader('Content-Encoding', 'none');
+                response.setHeader('Connection', 'keep-alive');
+                response.setHeader('Access-Control-Allow-Origin', '*');
                 response.end(content, 'utf-8');
-           //}
-           }
-        });
-    });
-
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
+            }
+            else if (filePath !== '/biometria'){
+                 response.writeHead(200, { 'Content-Type': contentType });
+                 response.end(content, 'utf-8');
+            //}
+            }
+         });
+    }
 });
 
+server.listen(port, hostname, () => {
+    console.log(`Server running at http://${hostname}:${port}/`);
+});

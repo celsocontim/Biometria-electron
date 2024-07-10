@@ -10,9 +10,42 @@
 <body>
     <h1>Insira seu dedo para cadastrar a biometria</h1>
     <div id="result"></div>
+    <button id="sendStartButton">Iniciar Biometria</button>
+    <button id="sendStopButton">Encerrar Biometria</button>
+    <button id="sendRecoverDataButton">Recuperar dados Biometria</button>
+    
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
     <script src="js/bootstrap.min.js"></script>
-    <script src="js/script.js"></script>
+    <script>
+        function sendBiometriaCommand(command) {
+            fetch('http://127.0.0.1:8080/biometria', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: command
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerText = data.message;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        document.getElementById('sendStartButton').addEventListener('click', function() {
+            sendBiometriaCommand('startCapture');
+        });
+
+        document.getElementById('sendStopButton').addEventListener('click', function() {
+            sendBiometriaCommand('stopCapture');
+        });
+
+        document.getElementById('sendRecoverDataButton').addEventListener('click', function() {
+            sendBiometriaCommand('sendRecoverData');
+        });
+    </script>
 </body>
 </html>
