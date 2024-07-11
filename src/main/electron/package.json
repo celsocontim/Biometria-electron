@@ -16,12 +16,10 @@
     "electron-builder": "^24.13.3"
   },
   "dependencies": {
-    "chokidar": "^3.6.0",
     "electron-updater": "^6.2.1",
     "minimal-request-promise": "^1.5.0",
     "sound-play": "^1.1.0",
-    "tree-kill": "^1.2.2",
-    "yaml": "^2.4.5"
+    "tree-kill": "^1.2.2"
   },
   "build": {
     "extraResources": [

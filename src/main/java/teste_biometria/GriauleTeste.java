@@ -45,11 +45,12 @@ public class GriauleTeste {
 			System.out.println("Prioridade: " + Thread.currentThread().getPriority());
 			System.out.println("Estado: " + Thread.currentThread().getState());
 			System.out.println("Griaule interrompida: " + Thread.currentThread().isInterrupted());
-			griauleAlo();
+            chamaGriaule();
         });
 		try {
 			server = new ServerSocket(2222);
 			System.out.println("Servidor ouvindo na porta 2222");
+			griaule.start();
 			while (executa){
 				client = server.accept();
 				System.out.println("New client connected: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
@@ -62,19 +63,16 @@ public class GriauleTeste {
 				System.out.println("Client says: " + message);
 				switch (message){
 					case "startCapture":
-						griaule.start();
 						while (aguardandoGriaule){
 							if (exit){
 								System.out.println("Biometria encontrada");
 								out.write("Biometria encontrada".getBytes());
 								out.flush();
 								aguardandoGriaule = false;
-								griaule.stop();
-								System.out.println("Estado da griaule: " + griaule.getState());
-								System.out.println("Griaule interrompida: " + griaule.isInterrupted());
-								System.out.println("Thread griaule interrompida");
 							}
 						}
+						aguardandoGriaule = true;
+						exit = false;
 						break;
 					case "exit":
 						System.out.println("Servidor java encerrando");
@@ -95,9 +93,11 @@ public class GriauleTeste {
 
 	private void chamaGriaule() {
 		final GriauleTeste self = this;
+
 		sdk.addDeviceListener(new DeviceAdapter() {
 			@Override
 			public void onPlug(String device) {
+				System.out.println(device);
 				self.onPlug(device);
 			}
 
@@ -115,23 +115,24 @@ public class GriauleTeste {
 
 			@Override
 			public void onFingerUp(String string) {
-            	self.onFingerUp(string);
-            }
+				self.onFingerUp(string);
+				exit = true;
+			}
 		});
 
 		sdk.addImageListener(new ImageAdapter() {
 			@Override
 			public void onCapture(String string, Image image) {
 				self.onImage(string, image);
-                try {
-                    sdk.stopCapturing(string);
-                } catch (GBSFingerprintException e) {
+				System.out.println(string);
+				try {
+					sdk.stopCapturing(string);
+				} catch (GBSFingerprintException e) {
 					LOG.log(Level.SEVERE, null, e);
-                }
-                sdk.finalize();
+				}
 			}
-
 		});
+
 		try {
 			//sdk.setLicenseFolder("C:/Temp");
 			sdk.initialize();
@@ -141,40 +142,7 @@ public class GriauleTeste {
 		}
 	}
 
-
-	private void griauleAlo () {
-			sdk.addDeviceListener(new DeviceAdapter() {
-				public void onPlug(String device) {
-					try {
-						System.out.println("Dispositivo encontrado: " + device);
-						sdk.startCapturing(device);
-					} catch (GBSFingerprintException e) {
-						LOG.log(Level.SEVERE, null, e);
-					}
-				}
-
-				public void onUnplug(String device) {
-					try {
-						System.out.println("Dispositivo desconectado: " + device);
-						sdk.stopCapturing(device);
-						sdk.finalize();
-						exit = true;
-
-					} catch (GBSFingerprintException e) {
-						LOG.log(Level.SEVERE, null, e);
-					}
-				}
-			});
-			try {
-				//sdk.setLicenseFolder("C:/Temp");
-				sdk.initialize();
-				System.in.read();
-			} catch (IOException | GBSFingerprintException ex) {
-				LOG.log(Level.SEVERE, null, ex);
-			}
-		}
-
-		private void onPlug (String device){
+	private void onPlug (String device){
 			try {
 				System.out.println("Plugged device: " + device);
 				sdk.startCapturing(device);
