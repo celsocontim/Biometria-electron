@@ -7,7 +7,7 @@ client.connect(2222, '127.0.0.1', function() {
 
 client.on('data', function(data) {
 	console.log('Received: ' + data);
-	client.write('Hello, server! Love, Client. \n');
+	client.write('startCapture\n');
 	//client.destroy(); // kill client after server's response
 });
 

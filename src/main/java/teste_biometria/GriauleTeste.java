@@ -9,7 +9,6 @@ import com.griaulebiometrics.gbsfingerprint.event.DeviceAdapter;
 import com.griaulebiometrics.gbsfingerprint.event.FingerAdapter;
 import com.griaulebiometrics.gbsfingerprint.event.FrameAdapter;
 import com.griaulebiometrics.gbsfingerprint.event.ImageAdapter;
-import com.griaulebiometrics.gbsfingerprint.handler.DeviceHandler;
 import com.griaulebiometrics.gbsfingerprint.exception.GBSFingerprintException;
 
 import java.io.*;
@@ -37,40 +36,57 @@ public class GriauleTeste {
 	private void openServer (){
 		ServerSocket server;
 		Socket client;
+		boolean executa = true;
+		boolean aguardandoGriaule = true;
 		Thread griaule = new Thread(() -> {
-            System.out.println("Comecando thread Griaule");
-            System.out.println("ID: " + Thread.currentThread().getId());
-            System.out.println("Nome: " + Thread.currentThread().getName());
-            System.out.println("Prioridade: " + Thread.currentThread().getPriority());
-            System.out.println("Estado: " + Thread.currentThread().getState());
-            griauleAlo();
+			System.out.println("Comecando thread Griaule");
+			System.out.println("ID: " + Thread.currentThread().getId());
+			System.out.println("Nome: " + Thread.currentThread().getName());
+			System.out.println("Prioridade: " + Thread.currentThread().getPriority());
+			System.out.println("Estado: " + Thread.currentThread().getState());
+			System.out.println("Griaule interrompida: " + Thread.currentThread().isInterrupted());
+			griauleAlo();
         });
-		griaule.start();
 		try {
 			server = new ServerSocket(2222);
 			System.out.println("Servidor ouvindo na porta 2222");
-			client = server.accept();
-			griaule.start();
-			while (!exit){
-				if (exit){
-					griaule.interrupt();
-					System.out.println("Thread Griaule encerrando");
+			while (executa){
+				client = server.accept();
+				System.out.println("New client connected: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
+				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8));
+				DataOutputStream out = new DataOutputStream(client.getOutputStream());
+				out.write("Oi aqui fala o Java".getBytes());
+				out.flush();
+				// Read message from client
+				String message = in.readLine();
+				System.out.println("Client says: " + message);
+				switch (message){
+					case "startCapture":
+						griaule.start();
+						while (aguardandoGriaule){
+							if (exit){
+								System.out.println("Biometria encontrada");
+								out.write("Biometria encontrada".getBytes());
+								out.flush();
+								aguardandoGriaule = false;
+								griaule.stop();
+								System.out.println("Estado da griaule: " + griaule.getState());
+								System.out.println("Griaule interrompida: " + griaule.isInterrupted());
+								System.out.println("Thread griaule interrompida");
+							}
+						}
+						break;
+					case "exit":
+						System.out.println("Servidor java encerrando");
+						// Close the client socket
+						client.close();
+						// Close the server socket
+						server.close();
+						executa = false;
+					default:
+						System.out.println("Requisicao nao fez nada");
 				}
 			}
-			System.out.println("New client connected: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
-			BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8));
-			DataOutputStream out = new DataOutputStream(client.getOutputStream());
-			out.write("Oi aqui fala o Java".getBytes());
-			out.flush();
-
-				// Read message from client
-			String message = in.readLine();
-			System.out.println("Client says: " + message);
-
-				// Close the client socket
-			client.close();
-				// Close the server socket
-			server.close();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -142,6 +158,7 @@ public class GriauleTeste {
 						System.out.println("Dispositivo desconectado: " + device);
 						sdk.stopCapturing(device);
 						sdk.finalize();
+						exit = true;
 
 					} catch (GBSFingerprintException e) {
 						LOG.log(Level.SEVERE, null, e);
