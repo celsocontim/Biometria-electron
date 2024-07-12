@@ -1,10 +1,6 @@
 package teste_biometria;
 
-import com.griaulebiometrics.gbsfingerprint.GBSFingerprint;
-import com.griaulebiometrics.gbsfingerprint.Image;
-import com.griaulebiometrics.gbsfingerprint.Template;
-import com.griaulebiometrics.gbsfingerprint.TemplateEncoding;
-import com.griaulebiometrics.gbsfingerprint.TemplateFormat;
+import com.griaulebiometrics.gbsfingerprint.*;
 import com.griaulebiometrics.gbsfingerprint.event.DeviceAdapter;
 import com.griaulebiometrics.gbsfingerprint.event.FingerAdapter;
 import com.griaulebiometrics.gbsfingerprint.event.FrameAdapter;
@@ -45,8 +41,8 @@ public class GriauleTeste {
 			System.out.println("Prioridade: " + Thread.currentThread().getPriority());
 			System.out.println("Estado: " + Thread.currentThread().getState());
 			System.out.println("Griaule interrompida: " + Thread.currentThread().isInterrupted());
-            chamaGriaule();
-        });
+			chamaGriaule();
+		});
 		try {
 			server = new ServerSocket(2222);
 			System.out.println("Servidor ouvindo na porta 2222");
@@ -171,6 +167,7 @@ public class GriauleTeste {
 
 	private void onImage(String device, Image image) {
 		System.out.println("Image captured on device: " + device);
+		System.out.println("Format: " + image.getFormat());
 		System.out.println("Width: " + image.getWidth());
 		System.out.println("Height: " + image.getHeight());
 		System.out.println("Resolution: " + image.getResolution());
@@ -178,7 +175,7 @@ public class GriauleTeste {
 		try {
 			final Template tpt = sdk.extractTemplate(image, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);
 			System.out.println("Quality: " + tpt.getQuality());
-
+			System.out.println(converteArrayByteParaString(tpt.getBuffer()));
 			if (!this.templates.isEmpty()) {
 				int i = 0;
 				for (Template reference : this.templates) {
@@ -250,6 +247,21 @@ public class GriauleTeste {
 	private final List<Template> templates = new ArrayList<Template>();
 
 	static volatile boolean exit = false;
+
+	/**
+	 * Converte um array de bytes para um String,
+	 */
+	public String converteArrayByteParaString(byte[] array) {
+
+		StringBuffer sb = new StringBuffer("");
+		for (int i = 0; i < array.length; i++) {
+			sb.append(array[i]);
+			if(i < array.length - 1) {
+				sb.append(" ");
+			}
+		}
+		return sb.toString();
+	}
 
 	private static final Logger LOG = Logger.getLogger(GriauleTeste.class.getName());
 
