@@ -4,7 +4,7 @@ const kill = require('tree-kill');
 const net = require('net');
 const { parentPort } = require('electron');
 
-const port = 3000;
+const port = 3001;
 const hostname = '127.0.0.1';
 
 function iniciaJava() {

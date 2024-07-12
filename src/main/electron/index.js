@@ -12,6 +12,11 @@ const javaSocketHost = '127.0.0.1'; // Endereço do Java
 const server = http.createServer((request, response) => {
     console.log('request ', request.url);
 
+    // Set CORS headers
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
     if (request.method === 'POST' && request.url === '/biometria') {
         let body = '';
 
@@ -41,7 +46,7 @@ const server = http.createServer((request, response) => {
             } else if(body === 'sendRecoverData') {
                 process.parentPort.postMessage(body);
                 response.writeHead(200, { 'Content-Type': 'application/json' });
-                response.end(JSON.stringify({ message: 'Comando stopCapture enviado para o Java' }));
+                response.end(JSON.stringify({ message: 'Comando sendRecoverData enviado para o Java' }));
             } else {
                 response.writeHead(400, { 'Content-Type': 'application/json' });
                 response.end(JSON.stringify({ message: 'Comando inválido' }));
