@@ -1,118 +1,109 @@
 package teste_biometria;
 
-import java.awt.Image;
 import com.griaulebiometrics.gbsfingerprint.*;
 import com.griaulebiometrics.gbsfingerprint.event.DeviceAdapter;
 import com.griaulebiometrics.gbsfingerprint.event.FingerAdapter;
-import com.griaulebiometrics.gbsfingerprint.event.FrameAdapter;
 import com.griaulebiometrics.gbsfingerprint.event.ImageAdapter;
 import com.griaulebiometrics.gbsfingerprint.exception.GBSFingerprintException;
+
 import java.io.*;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.*;
 
 public class GriauleTeste {
-    public static void main(String[] argv) throws Exception {
-        final GriauleTeste main = new GriauleTeste();
-        main.openServer();
-        System.out.flush();
-        System.out.println("TESTE ED");
-    }
 
-    private void openServer() {
-        ServerSocket server;
-        Socket client;
-        boolean executa = true;
-        boolean aguardandoGriaule = true;
-        Thread griaule = new Thread(() -> {
-            System.out.println("Comecando thread Griaule");
-            chamaGriaule();
-        });
+    private final GBSFingerprint sdk = GBSFingerprint.getInstance();
+    private final List<Template> templates = new ArrayList<>();
+    private static final Logger LOG = Logger.getLogger(GriauleTeste.class.getName());
+    private static volatile boolean exit = false;
+    private static volatile boolean capturing = false;
+    private static volatile boolean clientConnected = false;
+
+    public static void main(String[] argv) {
         try {
-            server = new ServerSocket(2222);
-            System.out.println("Servidor ouvindo na porta 2222");
-            griaule.start();
-            while (executa) {
-                client = server.accept();
-                System.out.println("New client connected: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
-                BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8));
-                DataOutputStream out = new DataOutputStream(client.getOutputStream());
-                out.write("Oi aqui fala o Java".getBytes());
-                out.flush();
-                String message = in.readLine();
-                System.out.println("Client says: " + message);
-                switch (message) {
-                    case "startCapture":
-                        while (aguardandoGriaule) {
-                            if (exit) {
-                                System.out.println("Biometria encontrada");
-                                out.write("Biometria encontrada".getBytes());
-                                out.flush();
-                                aguardandoGriaule = false;
-                            }
-                        }
-                        aguardandoGriaule = true;
-                        exit = false;
-                        break;
-                    case "exit":
-                        System.out.println("Servidor java encerrando");
-                        client.close();
-                        server.close();
-                        executa = false;
-                    default:
-                        System.out.println("Requisicao nao fez nada");
-                }
-            }
+            GriauleTeste main = new GriauleTeste();
+            main.openServer();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void chamaGriaule() {
-        final GriauleTeste self = this;
+    private void openServer() {
+        try (ServerSocket server = new ServerSocket(2222)) {
+            System.out.println("Servidor ouvindo na porta 2222");
 
-        sdk.addDeviceListener(new DeviceAdapter() {
-            @Override
-            public void onPlug(String device) {
-                System.out.println(device);
-                self.onPlug(device);
-            }
+            Thread griauleThread = new Thread(this::chamaGriaule);
+            griauleThread.start();
 
-            @Override
-            public void onUnplug(String device) {
-                self.onUnplug(device);
-            }
-        });
+            while (true) {
+                try (Socket client = server.accept();
+                     BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8));
+                     DataOutputStream out = new DataOutputStream(client.getOutputStream())) {
 
-        sdk.addFingerListener(new FingerAdapter() {
-            @Override
-            public void onFingerDown(String string) {
-                self.onFingerDown(string);
-            }
+                    clientConnected = true;
+                    System.out.println("New client connected: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
+                    out.write("Oi aqui fala o Java".getBytes());
+                    out.flush();
 
-            @Override
-            public void onFingerUp(String string) {
-                self.onFingerUp(string);
-                exit = true;
-            }
-        });
+                    String message;
+                    while ((message = in.readLine()) != null) {
+                        System.out.println("Client says: " + message);
+                        processClientMessage(message, out);
+                    }
 
-        sdk.addImageListener(new ImageAdapter() {
-            @Override
-            public void onCapture(String string, com.griaulebiometrics.gbsfingerprint.Image image) {
-                self.onImage(string, image);
-                System.out.println(string);
-                try {
-                    sdk.stopCapturing(string);
-                } catch (GBSFingerprintException e) {
-                    LOG.log(Level.SEVERE, null, e);
+                } catch (IOException e) {
+                    LOG.log(Level.WARNING, "Erro na comunicação com o cliente", e);
+                } finally {
+                    clientConnected = false;
+                    capturing = false;
                 }
             }
-        });
+        } catch (IOException e) {
+            LOG.log(Level.SEVERE, "Erro ao iniciar o servidor", e);
+        }
+    }
+
+    private void processClientMessage(String message, DataOutputStream out) throws IOException {
+        switch (message) {
+            case "startCapture":
+                if (!capturing) {
+                    capturing = true;
+                    startCapture(out);
+                } else {
+                    out.write("Capture already in progress".getBytes());
+                    out.flush();
+                }
+                break;
+            case "exit":
+                System.out.println("Servidor java encerrando");
+                System.exit(0);
+                break;
+            default:
+                System.out.println("Requisicao nao fez nada");
+                break;
+        }
+    }
+
+    private void startCapture(DataOutputStream out) throws IOException {
+        exit = false;
+        while (capturing) {
+            if (exit) {
+                System.out.println("Biometria encontrada");
+                out.write("Biometria encontrada".getBytes());
+                out.flush();
+                capturing = false;
+                break;
+            }
+        }
+    }
+
+    private void chamaGriaule() {
+        System.out.println("Começando thread Griaule");
+        setupSdkListeners();
 
         try {
             sdk.initialize();
@@ -122,13 +113,58 @@ public class GriauleTeste {
         }
     }
 
+    private void setupSdkListeners() {
+        sdk.addDeviceListener(new DeviceAdapter() {
+            @Override
+            public void onPlug(String device) {
+                GriauleTeste.this.onPlug(device);
+            }
+
+            @Override
+            public void onUnplug(String device) {
+                GriauleTeste.this.onUnplug(device);
+            }
+        });
+
+        sdk.addFingerListener(new FingerAdapter() {
+            @Override
+            public void onFingerDown(String device) {
+                if (clientConnected && capturing) {
+                    GriauleTeste.this.onFingerDown(device);
+                }
+            }
+
+            @Override
+            public void onFingerUp(String device) {
+                if (clientConnected && capturing) {
+                    GriauleTeste.this.onFingerUp(device);
+                    exit = true;
+                }
+            }
+        });
+
+        sdk.addImageListener(new ImageAdapter() {
+            @Override
+            public void onCapture(String device, com.griaulebiometrics.gbsfingerprint.Image image) {
+                if (clientConnected && capturing) {
+                    GriauleTeste.this.onImage(device, image);
+                    try {
+                        sdk.stopCapturing(device);
+                    } catch (GBSFingerprintException e) {
+                        LOG.log(Level.SEVERE, null, e);
+                    }
+                }
+            }
+        });
+    }
+
     private void onPlug(String device) {
         try {
             System.out.println("Plugged device: " + device);
             sdk.startCapturing(device);
             System.out.println("Capture started on device: " + device);
         } catch (GBSFingerprintException ex) {
-            Logger.getLogger(GriauleTeste.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.log(Level.SEVERE, null, ex);
         }
     }
 
@@ -144,10 +180,6 @@ public class GriauleTeste {
         System.out.println("Finger removed on device: " + device);
     }
 
-    private void onFrame(String device, com.griaulebiometrics.gbsfingerprint.Image image) {
-        System.out.println("Frame captured on device: " + device);
-    }
-
     private void onImage(String device, com.griaulebiometrics.gbsfingerprint.Image image) {
         System.out.println("Image captured on device: " + device);
         System.out.println("Format: " + image.getFormat());
@@ -156,82 +188,33 @@ public class GriauleTeste {
         System.out.println("Resolution: " + image.getResolution());
 
         try {
-            final Template tpt = sdk.extractTemplate(image, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);
+            Template tpt = sdk.extractTemplate(image, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);
             System.out.println("Quality: " + tpt.getQuality());
             System.out.println(converteArrayByteParaString(tpt.getBuffer()));
-            if (!this.templates.isEmpty()) {
-                int i = 0;
-                for (Template reference : this.templates) {
-                    try {
-                        System.out.println("Verification against template " + (i++) + " with score " + sdk.verify(tpt, reference).getScore());
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                }
-            }
-            this.templates.add(tpt);
+
+            verifyTemplates(tpt);
+
+            templates.add(tpt);
         } catch (GBSFingerprintException ex) {
-            Logger.getLogger(GriauleTeste.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    private void run() throws NoSuchMethodException {
-        final GriauleTeste self = this;
-
-        sdk.addDeviceListener(new DeviceAdapter() {
-            @Override
-            public void onPlug(String device) {
-                self.onPlug(device);
-            }
-
-            @Override
-            public void onUnplug(String device) {
-                self.onUnplug(device);
-            }
-        });
-
-        sdk.addFingerListener(new FingerAdapter() {
-            @Override
-            public void onFingerDown(String string) {
-                self.onFingerDown(string);
-            }
-
-            @Override
-            public void onFingerUp(String string) {
-                self.onFingerUp(string);
-            }
-        });
-
-        sdk.addFrameListener(new FrameAdapter() {
-            @Override
-            public void onCapture(String string, com.griaulebiometrics.gbsfingerprint.Image image) {
-                self.onFrame(string, image);
-            }
-        });
-
-        sdk.addImageListener(new ImageAdapter() {
-            @Override
-            public void onCapture(String string, com.griaulebiometrics.gbsfingerprint.Image image) {
-                self.onImage(string, image);
-            }
-        });
-
-        try {
-            sdk.initialize();
-            System.in.read();
-        } catch (IOException | GBSFingerprintException ex) {
             LOG.log(Level.SEVERE, null, ex);
         }
     }
 
-    final GBSFingerprint sdk = GBSFingerprint.getInstance();
-
-    private final List<Template> templates = new ArrayList<Template>();
-
-    static volatile boolean exit = false;
+    private void verifyTemplates(Template tpt) {
+        if (!templates.isEmpty()) {
+            int i = 0;
+            for (Template reference : templates) {
+                try {
+                    System.out.println("Verification against template " + (i++) + " with score " + sdk.verify(tpt, reference).getScore());
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }
+    }
 
     public String converteArrayByteParaString(byte[] array) {
-        StringBuffer sb = new StringBuffer("");
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < array.length; i++) {
             sb.append(array[i]);
             if (i < array.length - 1) {
@@ -240,6 +223,4 @@ public class GriauleTeste {
         }
         return sb.toString();
     }
-
-    private static final Logger LOG = Logger.getLogger(GriauleTeste.class.getName());
 }
