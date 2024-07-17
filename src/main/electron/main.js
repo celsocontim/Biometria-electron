@@ -114,11 +114,12 @@ function createWindow() {
         HTTPServer.on('message', (data) => {
           console.log('Mensagem recebida do processo filho: ', data);
           var string = (data.toString());
-          if (string.includes("startCapture")){
+          if (string.includes("Capture")){
                var client = new net.Socket();
                client.connect(2222, '127.0.0.1', function() {
                	console.log('Connected');
                });
+               client.write('startCapture\n');
                client.on('data', function(retorno) {
                	console.log('Received: ' + retorno);
                	var stringRetorno = (retorno.toString());
@@ -129,7 +130,6 @@ function createWindow() {
                	}
                	//client.destroy(); // kill client after server's response
                });
-               client.write('startCapture\n');
           }
         })
 

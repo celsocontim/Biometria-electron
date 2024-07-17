@@ -11,6 +11,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +35,7 @@ public class GriauleTeste {
 		ServerSocket server;
 		Socket client;
 		boolean executa = true;
-		boolean aguardandoGriaule = true;
+		//boolean aguardandoGriaule = true;
 		Thread griaule = new Thread(() -> {
 			System.out.println("Comecando thread Griaule");
 			System.out.println("ID: " + Thread.currentThread().getId());
@@ -61,6 +62,10 @@ public class GriauleTeste {
 				switch (message){
 					case "startCapture":
 						sdk.startCapturing(dispositivo);
+						String mensagem = "Captura Iniciada";
+						out.write(mensagem.getBytes());
+						out.flush();
+						/*
 						while (aguardandoGriaule){
 							if (exit){
 								String mensagem = "Biometria encontrada, score: " + ultimoScore;
@@ -73,6 +78,24 @@ public class GriauleTeste {
 						}
 						aguardandoGriaule = true;
 						exit = false;
+
+						 */
+						break;
+					case "checkCapture":
+                        String retorno;
+						//verifica se teve um dedo
+                        if (!Objects.equals(ultimoDedo, "")){
+                            retorno = "Dedo encontrado: " + ultimoDedo;
+                        }
+						else {
+                            retorno = "Dedo nao encontrado";
+                        }
+                        out.write(retorno.getBytes());
+                        out.flush();
+                        break;
+					case "stopCapture":
+						sdk.stopCapturing(dispositivo);
+						ultimoDedo = "";
 						break;
 					case "exit":
 						System.out.println("Servidor java encerrando");
@@ -178,7 +201,8 @@ public class GriauleTeste {
 		try {
 			final Template tpt = sdk.extractTemplate(image, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);
 			System.out.println("Quality: " + tpt.getQuality());
-			System.out.println(converteArrayByteParaString(tpt.getBuffer()));
+			ultimoDedo = converteArrayByteParaString(tpt.getBuffer());
+			System.out.println(ultimoDedo);
 			byte [] array = converteStringToArrayByte(dedoCelso);
 			Template dedoCelsoTpt = new Template(array, 57, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);
 			ultimoScore = sdk.verify(tpt, dedoCelsoTpt).getScore();
@@ -257,6 +281,8 @@ public class GriauleTeste {
 	private final List<Template> templates = new ArrayList<Template>();
 
 	static volatile String dispositivo = "nada";
+
+	public static volatile String ultimoDedo = "";
 
 	public volatile int ultimoScore = 0;
 

@@ -1,9 +1,9 @@
 {
   "name": "demo-app",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "main.js",
   "description": "blablabla",
-  "author": "celsoContimUnimed",
+  "author": "Celso Contim & Ednilson Monteiro",
   "scripts": {
     "postinstall": "install-app-deps",
     "start": "npm install && electron ./app",
