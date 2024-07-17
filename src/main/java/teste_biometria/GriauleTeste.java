@@ -59,12 +59,14 @@ public class GriauleTeste {
 				System.out.println("Client says: " + message);
 				switch (message){
 					case "startCapture":
+						sdk.startCapturing(dispositivo);
 						while (aguardandoGriaule){
 							if (exit){
 								System.out.println("Biometria encontrada");
 								out.write("Biometria encontrada".getBytes());
 								out.flush();
 								aguardandoGriaule = false;
+								sdk.stopCapturing(dispositivo);
 							}
 						}
 						aguardandoGriaule = true;
@@ -121,11 +123,6 @@ public class GriauleTeste {
 			public void onCapture(String string, Image image) {
 				self.onImage(string, image);
 				System.out.println(string);
-				try {
-					sdk.stopCapturing(string);
-				} catch (GBSFingerprintException e) {
-					LOG.log(Level.SEVERE, null, e);
-				}
 			}
 		});
 
@@ -139,13 +136,17 @@ public class GriauleTeste {
 	}
 
 	private void onPlug (String device){
-			try {
+			//try {
 				System.out.println("Plugged device: " + device);
+				dispositivo = device;
+				/*
 				sdk.startCapturing(device);
 				System.out.println("Capture started on device: " + device);
 			} catch (GBSFingerprintException ex) {
 				Logger.getLogger(GriauleTeste.class.getName()).log(Level.SEVERE, null, ex);
 			}
+
+				 */
 		}
 
 
@@ -154,11 +155,11 @@ public class GriauleTeste {
 	}
 
 	private void onFingerDown(String device) {
-		System.out.println("Finger removed on device: " + device);
+		System.out.println("Finger detected on device: " + device);
 	}
 
 	private void onFingerUp(String device){
-		System.out.println("Finger detected on device: " + device);
+		System.out.println("Finger removed on device: " + device);
 	}
 
 	private void onFrame(String device, Image image) {
@@ -245,6 +246,8 @@ public class GriauleTeste {
 	final GBSFingerprint sdk = GBSFingerprint.getInstance();
 
 	private final List<Template> templates = new ArrayList<Template>();
+
+	static volatile String dispositivo = "false";
 
 	static volatile boolean exit = false;
 
