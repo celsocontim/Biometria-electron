@@ -28,17 +28,18 @@ const server = http.createServer((request, response) => {
             console.log(body)
             if (body === 'startCapture') {
                 process.parentPort.postMessage(body);
-
+                process.parentPort.on('message', (e) => {
+                   console.log('Mensagem recebida do electron: ' + e.data);
+                   //response.writeHead(200, { 'Content-Type': 'application/json' });
+                   response.statusCode = 200;
+                   response.end(JSON.stringify({ message: e.data}));
+                })
                 // Envia a mensagem recebida para o Java via socket
                 //const client = new net.Socket();
                 //client.connect(javaSocketPort, javaSocketHost, () => {
                 //    client.write('startCapture');
                 //    client.end();
                 //});
-                
-
-                response.writeHead(200, { 'Content-Type': 'application/json' });
-                response.end(JSON.stringify({ message: 'Comando startCapture enviado para o Java' }));
             } else if(body === 'stopCapture') {
                 process.parentPort.postMessage(body);
                 response.writeHead(200, { 'Content-Type': 'application/json' });
@@ -110,9 +111,11 @@ const server = http.createServer((request, response) => {
     }
 });
 
+/*
 process.parentPort.on('message', (e) => {
    console.log('Mensagem recebida do electron: ' + e.data);
 })
+*/
 
 server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
