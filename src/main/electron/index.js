@@ -110,6 +110,10 @@ const server = http.createServer((request, response) => {
     }
 });
 
+process.parentPort.on('message', (e) => {
+   console.log('Mensagem recebida do electron: ' + e.data);
+})
+
 server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
 });

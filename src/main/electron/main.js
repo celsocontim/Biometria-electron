@@ -83,10 +83,6 @@ function createWindow() {
       console.log("Servidor HTTP iniciado! Process ID: ", HTTPServer.pid);
     });
 
-    HTTPServer.on('message', (data) => {
-      console.log('Mensagem recebida do processo filho: ', data);
-    })
-
     serverProcess = new iniciaJava();
 
     let appUrl = 'http://localhost:8080/';
@@ -115,6 +111,29 @@ function createWindow() {
            HTTPServer.kill();
         });
 
+        HTTPServer.on('message', (data) => {
+          console.log('Mensagem recebida do processo filho: ', data);
+          var string = (data.toString());
+          if (string.includes("startCapture")){
+               var client = new net.Socket();
+               client.connect(2222, '127.0.0.1', function() {
+               	console.log('Connected');
+               });
+               client.on('data', function(retorno) {
+               	console.log('Received: ' + retorno);
+               	var stringRetorno = (retorno.toString());
+               	if (stringRetorno.includes("score")){
+               	   console.log("Fechando socket...")
+               	   client.destroy();
+               	   HTTPServer.postMessage(stringRetorno)
+               	}
+               	//client.destroy(); // kill client after server's response
+               });
+               client.write('startCapture\n');
+          }
+        })
+
+        /*
         TCPServer.on('message', (data) => {
               var string = (data.toString());
               console.log("Mensagem do TCP server chegou no eletron");
@@ -135,7 +154,7 @@ function createWindow() {
                   cadastroSucesso = 1;
               };
         });
-
+        */
 
         let trayIcon = null
         if(!app.isPackaged) {
