@@ -11,6 +11,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -62,8 +63,9 @@ public class GriauleTeste {
 						sdk.startCapturing(dispositivo);
 						while (aguardandoGriaule){
 							if (exit){
-								System.out.println("Biometria encontrada");
-								out.write("Biometria encontrada".getBytes());
+								String mensagem = "Biometria encontrada, score: " + ultimoScore;
+								System.out.println(mensagem);
+								out.write(mensagem.getBytes());
 								out.flush();
 								aguardandoGriaule = false;
 								sdk.stopCapturing(dispositivo);
@@ -177,6 +179,11 @@ public class GriauleTeste {
 			final Template tpt = sdk.extractTemplate(image, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);
 			System.out.println("Quality: " + tpt.getQuality());
 			System.out.println(converteArrayByteParaString(tpt.getBuffer()));
+			byte [] array = converteStringToArrayByte(dedoCelso);
+			Template dedoCelsoTpt = new Template(array, 57, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);
+			ultimoScore = sdk.verify(tpt, dedoCelsoTpt).getScore();
+			System.out.println("Score contra dedo do meio do Celso: " + ultimoScore);
+			/*
 			if (!this.templates.isEmpty()) {
 				int i = 0;
 				for (Template reference : this.templates) {
@@ -188,6 +195,8 @@ public class GriauleTeste {
 				}
 			}
 			this.templates.add(tpt);
+
+			 */
 		} catch (GBSFingerprintException ex) {
 			Logger.getLogger(GriauleTeste.class.getName()).log(Level.SEVERE, null, ex);
 		}
@@ -247,9 +256,13 @@ public class GriauleTeste {
 
 	private final List<Template> templates = new ArrayList<Template>();
 
-	static volatile String dispositivo = "false";
+	static volatile String dispositivo = "nada";
+
+	public volatile int ultimoScore = 0;
 
 	static volatile boolean exit = false;
+
+	public final String dedoCelso = "-89 -1 8 -115 1 96 1 125 1 0 57 -1 -1 38 0 -35 0 -121 0 2 59 1 100 -112 0 -45 0 -67 0 2 53 1 90 125 0 -73 0 -76 0 2 81 1 90 127 -128 122 0 -68 0 2 48 0 90 -124 0 -51 0 -114 0 2 -123 0 90 -119 -128 -69 0 -85 0 2 -123 0 90 123 -128 1 1 -59 0 1 42 1 60 21 -128 -100 0 56 0 1 -88 0 60 99 0 -6 0 -45 0 1 51 1 50 32 -128 83 0 -86 0 2 46 0 50 122 -128 115 0 54 0 1 -67 0 40 97 0 -29 0 3 1 1 50 1 40 43 -128 119 0 -21 0 2 51 0 40 -100 -128 74 0 125 0 1 -25 0 40 22 -128 3 1 -123 0 1 68 1 40 100 -128 63 0 -66 0 1 -13 0 40 38 0 -122 0 -94 0 1 24 0 40 -116 -128 67 0 -51 0 1 -31 0 40 31 0 12 1 -92 0 1 37 1 40 15 -128 -77 0 68 0 2 84 1 40 100 0 -87 0 -32 0 1 86 1 40 45 -128 -97 0 -99 0 2 0 0 30 123 0 -104 0 -11 0 1 -118 0 30 -80 -128 11 1 -75 0 1 42 1 30 107 -128 -121 0 16 1 1 14 1 30 49 0 8 1 61 0 1 -79 0 30 10 -128 14 1 54 0 1 -56 0 30 5 0 47 0 -21 0 2 -5 0 30 -95 0 -2 0 15 1 1 28 1 30 48 -128 -29 0 -17 0 1 -126 0 30 -92 0 109 0 100 0 1 38 0 30 108 0 -59 0 -41 0 1 -128 0 30 43 0 93 0 -23 0 2 -23 0 30 51 -128 56 0 -86 0 1 45 0 30 37 0 92 0 109 0 2 -44 0 30 22 0 64 0 40 1 2 55 1 30 -76 0 -41 0 -36 0 1 51 1 20 127 0 -12 0 65 0 2 -112 0 20 103 -128 0 0";
 
 	/**
 	 * Converte um array de bytes para um String,
@@ -264,6 +277,19 @@ public class GriauleTeste {
 			}
 		}
 		return sb.toString();
+	}
+
+	public byte[] converteStringToArrayByte(String texto) {
+
+		StringTokenizer st = new StringTokenizer(texto);
+		int i = 0;
+		byte [] array = new byte [st.countTokens()];
+
+		while (st.hasMoreTokens()) {
+			array[i] = Byte.valueOf(st.nextToken()).byteValue();
+			i++;
+		}
+		return array;
 	}
 
 	private static final Logger LOG = Logger.getLogger(GriauleTeste.class.getName());

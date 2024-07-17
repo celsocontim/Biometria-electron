@@ -3,10 +3,12 @@ const path = require('path');
 const { autoUpdater } = require("electron-updater");
 const fs = require ('fs');
 const sound = require("sound-play");
+const net = require('net');
 
 let win;
 let serverProcess;
 var cadastroSucesso = 0;
+var score;
 
 app.allowRendererProcessReuse = true;
 
@@ -28,6 +30,49 @@ function showNotification(title, body) {
   logNotification(notificationMessage);
 }
 
+function iniciaJava() {
+
+    let platform = process.platform;
+
+    if (platform === 'win32') {
+           serverProcess = require('child_process')
+                    .spawn('cmd.exe', ['/c', 'demo.bat']
+                           ,{
+                               cwd: './resources/bin'
+                           },{ shell: true })
+                       .on('error', function( err ){ throw err });
+    } else {
+        serverProcess = require('child_process')
+            .spawn(app.getAppPath() + '\\resources\\bin\\demo',
+            { shell: true });
+    }
+
+    if (!serverProcess) {
+        console.error('Unable to start java from ' + app.getAppPath());
+        app.quit();
+        return;
+    }
+
+    serverProcess.stdout.on('data', function (data) {
+        console.log('Java process: ' + data);
+    });
+
+    console.log("Java PID: " + serverProcess.pid);
+    return serverProcess;
+}
+
+
+function mataJava(serverProcess) {
+     if (serverProcess) {
+         const kill = require('tree-kill');
+         kill(serverProcess.pid, 'SIGTERM', function () {
+            console.log('Server process killed');
+         });
+         serverProcess = null;
+         console.log('Server process killed');
+     }
+};
+
 function createWindow() {
 
     let platform = process.platform;
@@ -42,10 +87,7 @@ function createWindow() {
       console.log('Mensagem recebida do processo filho: ', data);
     })
 
-    const TCPServer = utilityProcess.fork(path.join(__dirname, 'socket.js'));
-    TCPServer.on('spawn', function (){
-      console.log("Servidor TCP iniciado! Process ID: ", TCPServer.pid);
-    });
+    serverProcess = new iniciaJava();
 
     let appUrl = 'http://localhost:8080/';
 
@@ -68,7 +110,8 @@ function createWindow() {
         });
 
         mainWindow.on('close', function (e) {
-           TCPServer.kill();
+           console.log("Matando processos...");
+           mataJava(serverProcess);
            HTTPServer.kill();
         });
 
