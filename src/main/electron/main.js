@@ -127,9 +127,7 @@ function createWindow() {
                client.on('data', function(retorno) {
                	console.log('Received: ' + retorno);
                	var stringRetorno = (retorno.toString());
-               	if (stringRetorno.includes("Iniciada")){
-               	   HTTPServer.postMessage(stringRetorno)
-               	}
+               	HTTPServer.postMessage(stringRetorno)
                });
           }
           if (string.includes("checkCapture")){
@@ -146,7 +144,7 @@ function createWindow() {
                   console.log('Received: ' + retorno);
                   var stringRetorno = (retorno.toString());
                   HTTPServer.postMessage(stringRetorno);
-                  if (stringRetorno.includes("Iniciada")){
+                  if (stringRetorno.includes("finalizada")){
                      console.log("Fechando socket...");
                      client.end('Obrigado Java, fechando socket agora');
                   }
