@@ -114,47 +114,48 @@ function createWindow() {
         HTTPServer.on('message', (data) => {
           console.log('Mensagem recebida do processo filho: ', data);
           var string = (data.toString());
-          if (string.includes("Capture")){
+          if (string.includes("startCapture")){
                var client = new net.Socket();
                client.connect(2222, '127.0.0.1', function() {
                	console.log('Connected');
                });
                client.write('startCapture\n');
+               setTimeout(function(){
+                 client.end('Electron cansou de esperar');
+                 HTTPServer.postMessage('Java estourou o timeout');
+               },20000);
                client.on('data', function(retorno) {
                	console.log('Received: ' + retorno);
                	var stringRetorno = (retorno.toString());
-               	if (stringRetorno.includes("score")){
-               	   console.log("Fechando socket...")
-               	   client.destroy();
+               	if (stringRetorno.includes("Iniciada")){
                	   HTTPServer.postMessage(stringRetorno)
                	}
-               	//client.destroy(); // kill client after server's response
                });
           }
-        })
-
-        /*
-        TCPServer.on('message', (data) => {
-              var string = (data.toString());
-              console.log("Mensagem do TCP server chegou no eletron");
-              if (string.includes("score")) {
-                  string = string.replace(/\s+/g, ''); //remove espaços em branco
-                  console.log(string);
-                  tocaBeep();
-                  if (Number(string.substring(string.length - 2)) > 40){
-                     mainWindow.loadURL(appUrl + "/biometriaEncontrada.html");
-                  } else {
-                     mainWindow.loadURL(appUrl + "/biometriaErro.html");
+          if (string.includes("checkCapture")){
+              client.write('checkCapture\n');
+              client.on('data', function(retorno) {
+                 console.log('Received: ' + retorno);
+                 var stringRetorno = (retorno.toString());
+                 HTTPServer.postMessage(stringRetorno);
+              });
+          }
+          if (string.includes("stopCapture")){
+              client.write('stopCapture\n');
+              client.on('data', function(retorno) {
+                  console.log('Received: ' + retorno);
+                  var stringRetorno = (retorno.toString());
+                  HTTPServer.postMessage(stringRetorno);
+                  if (stringRetorno.includes("Iniciada")){
+                     console.log("Fechando socket...");
+                     client.end('Obrigado Java, fechando socket agora');
                   }
-              }
-              else if (string.includes("Finger detected on device") && cadastroSucesso == 0) {
-                  console.log(string);
-                  tocaBeep();
-                  mainWindow.loadURL(appUrl + "/cadastroSucesso.html");
-                  cadastroSucesso = 1;
-              };
-        });
-        */
+              });
+          }
+          if (string.includes("getVersion")){
+               HTTPServer.postMessage(app.getVersion());
+          }
+        })
 
         let trayIcon = null
         if(!app.isPackaged) {
@@ -212,9 +213,6 @@ function tocaBeep() {
 };
 
 app.on('ready', function() {
-   ipcMain.handle('get-version', async () => {
-      return app.getVersion();
-   })
    createWindow();
    console.log(app.getVersion());
    globalShortcut.register('Alt+H',() => {

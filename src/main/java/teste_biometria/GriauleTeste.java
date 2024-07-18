@@ -94,6 +94,9 @@ public class GriauleTeste {
                         out.flush();
                         break;
 					case "stopCapture":
+						String volta = "Captura finalizada";
+						out.write(volta.getBytes());
+						out.flush();
 						sdk.stopCapturing(dispositivo);
 						ultimoDedo = "";
 						break;
