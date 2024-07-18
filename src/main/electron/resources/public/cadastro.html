@@ -11,8 +11,8 @@
     <h1>Insira seu dedo para cadastrar a biometria</h1>
     <div id="result"></div>
     <button id="sendStartButton">Iniciar Biometria</button>
-    <button id="sendStopButton">Encerrar Biometria</button>
-    <button id="sendRecoverDataButton">Recuperar dados Biometria</button>
+    <button id="sendCheckButton">Checar captura</button>
+    <button id="sendStopButton">Parar captura</button>
     
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
@@ -39,12 +39,12 @@
             sendBiometriaCommand('startCapture');
         });
 
-        document.getElementById('sendStopButton').addEventListener('click', function() {
-            sendBiometriaCommand('stopCapture');
+        document.getElementById('sendCheckButton').addEventListener('click', function() {
+            sendBiometriaCommand('checkCapture');
         });
 
-        document.getElementById('sendRecoverDataButton').addEventListener('click', function() {
-            sendBiometriaCommand('sendRecoverData');
+        document.getElementById('sendStopButton').addEventListener('click', function() {
+            sendBiometriaCommand('stopCapture');
         });
     </script>
 </body>

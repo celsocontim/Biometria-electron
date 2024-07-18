@@ -21,12 +21,12 @@ const server = http.createServer((request, response) => {
         let body = '';
 
         request.on('data', chunk => {
-            body += chunk.toString();
+            body = chunk.toString();
         });
 
         request.on('end', () => {
             console.log(body)
-            if (body === 'startCapture') {
+            if (body.includes('Capture')) {
                 process.parentPort.postMessage(body);
                 process.parentPort.on('message', (e) => {
                    console.log('Mensagem recebida do electron: ' + e.data);
@@ -34,20 +34,6 @@ const server = http.createServer((request, response) => {
                    response.statusCode = 200;
                    response.end(JSON.stringify({ message: e.data}));
                 })
-                // Envia a mensagem recebida para o Java via socket
-                //const client = new net.Socket();
-                //client.connect(javaSocketPort, javaSocketHost, () => {
-                //    client.write('startCapture');
-                //    client.end();
-                //});
-            } else if(body === 'stopCapture') {
-                process.parentPort.postMessage(body);
-                response.writeHead(200, { 'Content-Type': 'application/json' });
-                response.end(JSON.stringify({ message: 'Comando stopCapture enviado para o Java' }));
-            } else if(body === 'sendRecoverData') {
-                process.parentPort.postMessage(body);
-                response.writeHead(200, { 'Content-Type': 'application/json' });
-                response.end(JSON.stringify({ message: 'Comando sendRecoverData enviado para o Java' }));
             } else {
                 response.writeHead(400, { 'Content-Type': 'application/json' });
                 response.end(JSON.stringify({ message: 'Comando inválido' }));
