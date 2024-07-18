@@ -114,41 +114,19 @@ function createWindow() {
         HTTPServer.on('message', (data) => {
           console.log('Mensagem recebida do processo filho: ', data);
           var string = (data.toString());
-          if (string.includes("startCapture")){
+          if (string.includes("Capture")){
                var client = new net.Socket();
                client.connect(2222, '127.0.0.1', function() {
                	console.log('Connected');
+               	client.write(string + '\n');
+                  client.on('data', function(retorno) {
+                     console.log('Received: ' + retorno);
+                     var stringRetorno = (retorno.toString());
+                     HTTPServer.postMessage('Electron: ' + stringRetorno)
+                     client.destroy();
+                  });
                });
-               client.write('startCapture\n');
-               setTimeout(function(){
-                 client.end('Electron cansou de esperar');
-                 HTTPServer.postMessage('Java estourou o timeout');
-               },20000);
-               client.on('data', function(retorno) {
-               	console.log('Received: ' + retorno);
-               	var stringRetorno = (retorno.toString());
-               	HTTPServer.postMessage(stringRetorno)
-               });
-          }
-          if (string.includes("checkCapture")){
-              client.write('checkCapture\n');
-              client.on('data', function(retorno) {
-                 console.log('Received: ' + retorno);
-                 var stringRetorno = (retorno.toString());
-                 HTTPServer.postMessage(stringRetorno);
-              });
-          }
-          if (string.includes("stopCapture")){
-              client.write('stopCapture\n');
-              client.on('data', function(retorno) {
-                  console.log('Received: ' + retorno);
-                  var stringRetorno = (retorno.toString());
-                  HTTPServer.postMessage(stringRetorno);
-                  if (stringRetorno.includes("finalizada")){
-                     console.log("Fechando socket...");
-                     client.end('Obrigado Java, fechando socket agora');
-                  }
-              });
+
           }
           if (string.includes("getVersion")){
                HTTPServer.postMessage(app.getVersion());

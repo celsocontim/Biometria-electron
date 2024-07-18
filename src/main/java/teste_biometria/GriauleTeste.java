@@ -41,7 +41,6 @@ public class GriauleTeste {
 			System.out.println("Nome: " + Thread.currentThread().getName());
 			System.out.println("Prioridade: " + Thread.currentThread().getPriority());
 			System.out.println("Estado: " + Thread.currentThread().getState());
-			System.out.println("Griaule interrompida: " + Thread.currentThread().isInterrupted());
 			chamaGriaule();
 		});
 		try {
@@ -53,8 +52,6 @@ public class GriauleTeste {
 				System.out.println("New client connected: " + client.getInetAddress().getHostAddress() + ":" + client.getPort());
 				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8));
 				DataOutputStream out = new DataOutputStream(client.getOutputStream());
-				out.write("Oi aqui fala o Java".getBytes());
-				out.flush();
 				// Read message from client
 				String message = in.readLine();
 				System.out.println("Client says: " + message);
@@ -64,21 +61,6 @@ public class GriauleTeste {
 						String mensagem = "Captura Iniciada";
 						out.write(mensagem.getBytes());
 						out.flush();
-						/*
-						while (aguardandoGriaule){
-							if (exit){
-								String mensagem = "Biometria encontrada, score: " + ultimoScore;
-								System.out.println(mensagem);
-								out.write(mensagem.getBytes());
-								out.flush();
-								aguardandoGriaule = false;
-								sdk.stopCapturing(dispositivo);
-							}
-						}
-						aguardandoGriaule = true;
-						exit = false;
-
-						 */
 						break;
 					case "checkCapture":
                         String retorno;
@@ -202,7 +184,7 @@ public class GriauleTeste {
 		System.out.println("Height: " + image.getHeight());
 		System.out.println("Resolution: " + image.getResolution());
 		ultimaImagem = convertJpgToBytesArray (image);
-		System.out.println(converteArrayByteParaString(ultimaImagem));
+		//System.out.println(converteArrayByteParaString(ultimaImagem));
 
 		try {
 			final Template tpt = sdk.extractTemplate(image, TemplateFormat.DEFAULT, TemplateEncoding.ASCII);

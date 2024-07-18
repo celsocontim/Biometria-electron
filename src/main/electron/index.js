@@ -6,8 +6,7 @@ const { parentPort } = require('electron');
 
 const port = 8080;
 const hostname = '127.0.0.1';
-const javaSocketPort = 12345; // Porta que o Java estará ouvindo
-const javaSocketHost = '127.0.0.1'; // Endereço do Java
+var mensagemElectron = '';
 
 const server = http.createServer((request, response) => {
     console.log('request ', request.url);
@@ -25,19 +24,8 @@ const server = http.createServer((request, response) => {
         });
 
         request.on('end', () => {
-            console.log(body)
-            if (body.includes('Capture')) {
-                process.parentPort.postMessage(body);
-                process.parentPort.on('message', (e) => {
-                   console.log('Mensagem recebida do electron: ' + e.data);
-                   //response.writeHead(200, { 'Content-Type': 'application/json' });
-                   response.statusCode = 200;
-                   response.end(JSON.stringify({ message: e.data}));
-                })
-            } else {
-                response.writeHead(400, { 'Content-Type': 'application/json' });
-                response.end(JSON.stringify({ message: 'Comando inválido' }));
-            }
+            console.log(body);
+            chamaElectron(body, response);
         });
     } else {
         let filePath = request.url === '/' ? 'resources/public/index.html' : 'resources/public' + request.url;
@@ -64,31 +52,7 @@ const server = http.createServer((request, response) => {
         let contentType = mimeTypes[extname] || 'application/octet-stream';
 
         fs.readFile(filePath, function(error, content) {
-            /*
-            if (error) {
-                 if(error.code == 'ENOENT') {
-                     fs.readFile('public/404.html', function(error, content) {
-                         response.writeHead(404, { 'Content-Type': 'text/html' });
-                         response.end(content, 'utf-8');
-                     });
-                 }
-                 else {
-                     response.writeHead(500);
-                     response.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
-                 }
-             }
- 
-             else {
-            */
-            if (filePath == '/documentation') {
-                response.setHeader('Content-Type', 'text/event-stream');
-                response.setHeader('Cache-Control', 'no-cache');
-                response.setHeader('Content-Encoding', 'none');
-                response.setHeader('Connection', 'keep-alive');
-                response.setHeader('Access-Control-Allow-Origin', '*');
-                response.end(content, 'utf-8');
-            }
-            else if (filePath !== '/biometria'){
+            if (filePath !== '/biometria'){
                  response.writeHead(200, { 'Content-Type': contentType });
                  response.end(content, 'utf-8');
             //}
@@ -97,12 +61,51 @@ const server = http.createServer((request, response) => {
     }
 });
 
-/*
-process.parentPort.on('message', (e) => {
-   console.log('Mensagem recebida do electron: ' + e.data);
-})
-*/
-
 server.listen(port, hostname, () => {
     console.log(`Server running at http://${hostname}:${port}/`);
+});
+
+process.parentPort.on('message', (e) => {
+   console.log('Mensagem recebida do electron: ' + e.data);
+   if (e.data.includes('Electron')){
+       //sinalizador que recebeu mensagem do Electron
+       mensagemElectron = e.data;
+   }
+})
+
+async function chamaElectron(body, response) {
+      if (body.includes('Capture')) {
+          process.parentPort.postMessage(body);
+          var contador = 0;
+          //nao pode colocar listener do parentPort aqui dentro
+          //senao vai abrir um listener toda vez que chamar essa funcao
+          //dando memory leak
+          while (!mensagemElectron.includes('Electron')){
+               //verifica variavel sinalizadora a cada 100ms, 5 vezes
+               //Quando contem "Electron", significa que chegou a resposta do Electron
+               await sleep(100);
+               contador++;
+               if (contador > 5){
+                  //Se nao chegar nenhuma mensagem do Electron em 500ms
+                  mensagemElectron = 'Electron erro'
+               }
+          }
+          if (mensagemElectron.includes('erro')){
+               response.statusCode = 400;
+               response.end(JSON.stringify({ message: 'Timeout no electron'}));
+
+          } else {
+               response.statusCode = 200;
+               //remove o cabeçalho "Electron: " da mensagem sinalizadora
+               response.end(JSON.stringify({ message: mensagemElectron.substring(10)}));
+          }
+          mensagemElectron = '';
+      } else {
+          response.writeHead(400, { 'Content-Type': 'application/json' });
+          response.end(JSON.stringify({ message: 'Comando inválido' }));
+      }
+}
+
+const sleep = (msec) => new Promise((resolve, _) => {
+  setTimeout(resolve, msec);
 });
