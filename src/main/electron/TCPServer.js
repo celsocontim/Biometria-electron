@@ -9,9 +9,8 @@ client.connect(2222, '127.0.0.1', function() {
 client.on('data', function(data) {
    console.log('Received: ' + data);
    var string = (data.toString());
-   if (string.includes"Captura Iniciada"){
-      var sleep = require('sleep');
-      sleep.sleep(5)//sleep for 5 seconds
+   if (string.includes ("Captura Iniciada")){
+
       client.write('checkCapture\n');
    }
 	//client.destroy(); // kill client after server's response
