@@ -8,44 +8,106 @@
     <title>Biometria</title>
 </head>
 <body>
-    <h1>Insira seu dedo para cadastrar a biometria</h1>
-    <div id="result"></div>
-    <button id="sendStartButton">Iniciar Biometria</button>
-    <button id="sendCheckButton">Checar captura</button>
-    <button id="sendStopButton">Parar captura</button>
-    
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script>
-        function sendBiometriaCommand(command) {
-            fetch('http://127.0.0.1:8080/biometria', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: command
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('result').innerText = data.message;
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
+<div class="container mt-5">
+    <h1 class="text-center">Insira seu dedo para cadastrar a biometria</h1>
+
+    <div class="text-center mt-4">
+        <div id="result"></div>
+        <div id="pollingCounter">Polling Counter: 0</div>
+    </div>
+
+    <div class="text-center mt-3">
+        <button id="biometriaButton" class="btn btn-primary">Iniciar Biometria</button>
+    </div>
+
+    <div class="text-center mt-3">
+        <img id="fingerprintImage" class="img-fluid d-none" alt="Fingerprint Image"/>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+<script src="js/bootstrap.min.js"></script>
+<script>
+    let currentStep = 'startCapture';
+    let pollingInterval;
+    let pollingCount = 0;
+    const pollingTimeout = 30000;
+    let timeoutHandle;
+
+    document.getElementById('biometriaButton').addEventListener('click', function() {
+        sendBiometriaCommand(currentStep);
+    });
+
+    function sendBiometriaCommand(command) {
+        fetch('http://127.0.0.1:8080/biometria', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: command
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('result').innerText = data.message;
+            processNextStep(data.message);
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            document.getElementById('result').innerText = 'Erro na comunicação com o servidor.';
+        });
+    }
+
+    function processNextStep(message) {
+        if (currentStep === 'startCapture' && message.includes('Captura Iniciada')) {
+            currentStep = 'checkCapture';
+            startPolling();
+        } else if (currentStep === 'checkCapture' && message.includes('Dedo encontrado')) {
+            stopPolling();
+            const base64Image = message.split('Dedo encontrado: ')[1];
+            displayFingerprintImage(byteArrayToBase64(base64Image));
+            currentStep = 'stopCapture';
+            sendBiometriaCommand(currentStep);
+        } else if (currentStep === 'stopCapture' && message.includes('Captura finalizada')) {
+            currentStep = 'startCapture';
+        } else if (message.includes('Timeout no electron')) {
+            stopPolling();
+            document.getElementById('result').innerText = 'Erro: Timeout no electron';
         }
+    }
 
-        document.getElementById('sendStartButton').addEventListener('click', function() {
-            sendBiometriaCommand('startCapture');
-        });
-
-        document.getElementById('sendCheckButton').addEventListener('click', function() {
+    function startPolling() {
+        pollingCount = 0;
+        pollingInterval = setInterval(() => {
+            pollingCount++;
+            document.getElementById('pollingCounter').innerText = `Polling Counter: ${pollingCount}`;
             sendBiometriaCommand('checkCapture');
-        });
+        }, 2000);
 
-        document.getElementById('sendStopButton').addEventListener('click', function() {
-            sendBiometriaCommand('stopCapture');
-        });
-    </script>
+        timeoutHandle = setTimeout(() => {
+            stopPolling();
+            document.getElementById('result').innerText = 'Erro: Tempo limite de captura atingido';
+            currentStep = 'startCapture';
+        }, pollingTimeout);
+    }
+
+    function stopPolling() {
+        clearInterval(pollingInterval);
+        clearTimeout(timeoutHandle);
+    }
+
+    function displayFingerprintImage(base64Image) {
+        const imgElement = document.getElementById('fingerprintImage');
+        imgElement.src = `data:image/png;base64,${base64Image}`;
+        imgElement.classList.remove('d-none');
+    }
+
+    function byteArrayToBase64(byteArrayString) {
+        const byteArray = byteArrayString.split(' ').map(Number);
+        const uint8Array = new Uint8Array(byteArray);
+        const base64String = btoa(String.fromCharCode.apply(null, uint8Array));
+        return base64String;
+    }
+</script>
 </body>
 </html>
