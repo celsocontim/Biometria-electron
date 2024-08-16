@@ -2,7 +2,6 @@ const {app, utilityProcess, BrowserWindow, Notification, Tray, Menu, ipcMain, gl
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
 const fs = require ('fs');
-const sound = require("sound-play");
 const net = require('net');
 
 let win;
@@ -129,7 +128,7 @@ function createWindow() {
 
           }
           if (string.includes("getVersion")){
-               HTTPServer.postMessage(app.getVersion());
+               HTTPServer.postMessage('Electron: ' + app.getVersion());
           }
         })
 
@@ -179,28 +178,9 @@ function createWindow() {
     startUp();
 }
 
-function tocaBeep() {
-      if(!app.isPackaged) {
-          sound.play(__dirname + "/resources/beep.mp3"); // when in dev mode
-      } else {
-          const soundPath = path.join(__dirname, "../../resources/beep.mp3");
-          sound.play(soundPath);
-      }
-};
-
 app.on('ready', function() {
    createWindow();
    console.log(app.getVersion());
-   globalShortcut.register('Alt+H',() => {
-      if(!app.isPackaged) {
-            console.log("HADOOOUKEN não empacotado")
-            sound.play(__dirname + "/resources/Hadouken.mp3"); // when in dev mode
-      } else {
-            console.log("HADOOOUKEN empacotado")
-            const soundPath = path.join(__dirname, "../../resources/Hadouken.mp3");
-            sound.play(soundPath);
-      }
-   });
 
    autoUpdater.checkForUpdatesAndNotify();
 

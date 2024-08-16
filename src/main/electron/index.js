@@ -1,7 +1,6 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const net = require('net');
 const { parentPort } = require('electron');
 
 const axios = require('axios');
@@ -113,7 +112,7 @@ async function chamaElectron(body, response) {
             ultimoDedo = '';
             responseXml = '';
          }
-         else{
+         else {
              var contador = 0;
              responseXml = '';
              process.parentPort.postMessage(body);
@@ -144,7 +143,27 @@ async function chamaElectron(body, response) {
              }
              mensagemElectron = '';
           }
-      } else {
+      } else if (body.includes('Version')){
+         var contador = 0;
+         responseXml = '';
+         process.parentPort.postMessage(body);
+         while (!mensagemElectron.includes('Electron')){
+             await sleep(200);
+             contador++;
+             if (contador > 5){
+                mensagemElectron = 'Electron erro'
+             }
+         }
+          if (mensagemElectron.includes('erro')){
+              response.statusCode = 400;
+              response.end(JSON.stringify({ message: 'Timeout no electron'}));
+          } else {
+               response.statusCode = 200;
+               response.end(JSON.stringify({ message: mensagemElectron.substring(10)}));
+          }
+          mensagemElectron = '';
+      }
+      else {
           response.writeHead(400, { 'Content-Type': 'application/json' });
           response.end(JSON.stringify({ message: 'Comando inválido' }));
           mensagemElectron = '';
@@ -154,6 +173,7 @@ async function chamaElectron(body, response) {
 const sleep = (msec) => new Promise((resolve, _) => {
   setTimeout(resolve, msec);
 });
+
 
 
 async function callUnimedbhAutenticarBiometriaV2(idPessoa, codDedoBiometria, strDigital, codigoLocalCadastro, loginInclusao, numeroCarteira, codigoGrupo) {

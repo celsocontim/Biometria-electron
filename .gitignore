@@ -16,3 +16,5 @@
 /src/main/electron/resources/lib/commons-io-2.4.jar
 /src/main/electron/resources/resourcesAntigos/
 /src/main/electron/resources/jdk-1.8/
+/src/main/electron/build/setup.exe
+/src/main/electron/build/ftrDriverSetupUMDF_win8_1594.exe
