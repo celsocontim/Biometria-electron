@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { parentPort } = require("electron");
 
-const port = 8080;
+const port = 8000;
 const hostname = "127.0.0.1";
 var tokenAcesso = "";
 var mensagemElectron = "";
@@ -111,20 +111,10 @@ async function verificarDedoComRetry() {
   let tentativas = 0;
   while (tentativas < maxTentativas) {
     try {
-      let response = await verificaDedo(
-        "8520971",
-        "POLEGAR_E",
-        ultimoDedo,
-        "?",
-        "",
-        "00060504143262000",
-        "",
-        tokenAcesso
-      );
+      let response = await verificaDedoTeste(ultimoDedo);
 
       if (response) {
-        console.log("Response resultado:", response.resultado);
-        console.log("Response token:", response.token);
+        console.log("Response resultado:", response);
         return;
       }
 
@@ -214,46 +204,31 @@ new Promise((resolve, _) => {
   setTimeout(resolve, msec);
 });
 
-async function verificaDedo(
-  idPessoa,
-  codDedoBiometria,
-  strDigital,
-  codigoLocalCadastro,
-  loginInclusao,
-  numeroCarteira,
-  codigoGrupo,
-  tokenAcesso
-) {
-  try {
-    const requestBody = {
-      idPessoa: idPessoa,
-      codDedoBiometria: codDedoBiometria,
-      strDigital: strDigital,
-      codigoLocalCadastro: codigoLocalCadastro,
-      loginInclusao: loginInclusao,
-      numeroCarteira: numeroCarteira,
-      codigoGrupo: codigoGrupo
-    };
+async function verificaDedoTeste (strDigital) {
+   try {
+      const requestBody = {
+         dedo: strDigital;
+      }
+      const response = await fetch("http://localhost:8080/verifica-dedo", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "access_token": tokenAcesso
+            },
+            body: JSON.stringify(requestBody)
+          });
 
-    const response = await fetch("http://localhost:8081/verifica-dedo", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "access_token": tokenAcesso
-      },
-      body: JSON.stringify(requestBody)
-    });
+          if (!response.ok) {
+            throw new Error(`Erro na requisição: ${response.statusText}`);
+          }
 
-    if (!response.ok) {
-      throw new Error(`Erro na requisição: ${response.statusText}`);
-    }
+          const data = await response.json();
 
-    const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("Error:", error);
+          throw error;
+        }
+};
 
-    return data;
-  } catch (error) {
-    console.error("Error:", error);
-    throw error;
-  }
-}
   

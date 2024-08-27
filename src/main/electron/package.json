@@ -1,6 +1,6 @@
 {
   "name": "demo-app",
-  "version": "0.3.4",
+  "version": "0.3.7",
   "main": "main.js",
   "description": "Aplicacao de biometria digital Unimed-BH",
   "author": "Celso Contim & Ednilson Monteiro",
@@ -18,7 +18,7 @@
   "dependencies": {
     "electron-updater": "^6.2.1",
     "minimal-request-promise": "^1.5.0",
-    "tree-kill": "^1.2.2",
+    "tree-kill": "^1.2.2"
   },
   "build": {
     "extraResources": [
