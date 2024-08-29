@@ -84,7 +84,7 @@ function createWindow() {
 
     serverProcess = new iniciaJava();
 
-    let appUrl = 'http://localhost:8080/';
+    let appUrl = 'http://localhost:8000/';
 
     const openWindow = function () {
         mainWindow = new BrowserWindow({

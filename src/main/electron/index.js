@@ -99,7 +99,7 @@ const fazerLogin = async () => {
     }
 
     const myJson = await response.json();
-
+    console.log (myJson.access_token);
     return myJson.access_token;
   } catch (error) {
     console.error("Erro:", error);
@@ -207,10 +207,10 @@ new Promise((resolve, _) => {
 async function verificaDedoTeste (strDigital) {
    try {
       const requestBody = {
-         dedo: strDigital;
+         dedo: strDigital
       }
       const response = await fetch("http://localhost:8080/verifica-dedo", {
-            method: "GET",
+            method: "POST",
             headers: {
               "Content-Type": "application/json",
               "access_token": tokenAcesso
@@ -219,7 +219,8 @@ async function verificaDedoTeste (strDigital) {
           });
 
           if (!response.ok) {
-            throw new Error(`Erro na requisição: ${response.statusText}`);
+            console.log (response)
+            throw new Error(`Erro na requisicaoo: ${response.statusText}`);
           }
 
           const data = await response.json();
